@@ -1,4 +1,5 @@
 package de.ohnes;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -18,6 +19,7 @@ import de.ohnes.AlgorithmicComponents.FPTAS.CompressionApproach;
 import de.ohnes.AlgorithmicComponents.FPTAS.DoubleCompressionApproach;
 import de.ohnes.AlgorithmicComponents.Shelves.GrageApproach;
 import de.ohnes.AlgorithmicComponents.Shelves.LandApproach;
+import de.ohnes.AlgorithmicComponents.Shelves.OhnesorgeApproach;
 import de.ohnes.logger.MyElasticsearchClient;
 import de.ohnes.logger.printSchedule;
 import de.ohnes.util.Instance;
@@ -44,8 +46,7 @@ public class App {
 
     private static String algo;
 
-    
-    /** 
+    /**
      * @param args
      * @throws Exception
      */
@@ -66,12 +67,12 @@ public class App {
         ExecutionsBeforePush = System.getenv("EXECS_BEFORE_PUSH");
         InstancePolicy = System.getenv("INSTANCE_POLICY");
         printResult = System.getenv("PRINT_RESULT");
-        
+
         LOGGER.info("Starting Algorithm!");
-        if(loop != null) {
+        if (loop != null) {
             MyElasticsearchClient.makeConnection(ESHost);
-            while(true) {
-                for(int i = 0; i < Integer.parseInt(ExecutionsBeforePush); i++) {
+            while (true) {
+                for (int i = 0; i < Integer.parseInt(ExecutionsBeforePush); i++) {
                     MyElasticsearchClient.addData(runTest());
                 }
                 MyElasticsearchClient.pushData(ESIndexPrefix + java.time.LocalDate.now().toString());
@@ -84,15 +85,19 @@ public class App {
 
     }
 
-    
-    /** 
+    /**
      * @return TestResult
      */
     private static TestResult runTest() {
+        if (algo == null) {
+            LOGGER.error("No Algorithm specified. Exiting.");
+            return null;
+        }
         Instance I = new Instance();
-        if(rand == null) {
+        if (rand == null) {
             try {
-                I = new ObjectMapper().readValue(Paths.get("TestInstances/TestInstance copy 3.json").toFile(), Instance.class);
+                I = new ObjectMapper().readValue(Paths.get("TestInstances/TestInstance.json").toFile(),
+                        Instance.class);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -100,39 +105,43 @@ public class App {
             I = getInstance();
         }
 
-
         DualApproximationFramework dF;
-        // if(algo == null) {
-        //     return null; //algo not specified.
-        // }
-        if(algo == null || algo.equals("Grage")) {
-            Algorithm algo = new GrageApproach();
+        if (algo.equals("Grage")) {
+            Algorithm shelves = new GrageApproach();
             Algorithm fptas = new DoubleCompressionApproach();
             Approximation approx = new TwoApproximation();
-            dF = new DualApproximationFramework(fptas, algo, approx, I);
-        } else if(algo.equals("Felix")) {
-            Algorithm algo = new LandApproach();
+            dF = new DualApproximationFramework(fptas, shelves, approx, I);
+        } else if (algo.equals("Land")) {
+            Algorithm shelves = new LandApproach();
             Algorithm fptas = new CompressionApproach();
             Approximation approx = new TwoApproximation();
-            dF = new DualApproximationFramework(fptas, algo, approx, I);
+            dF = new DualApproximationFramework(fptas, shelves, approx, I);
+        } else if (algo.equals("Ohnesorge")) {
+            Algorithm shelves = new OhnesorgeApproach();
+            Algorithm fptas = new CompressionApproach();
+            Approximation approx = new TwoApproximation();
+            dF = new DualApproximationFramework(fptas, shelves, approx, I);
         } else {
             return null;
         }
 
-
         long startTime = System.currentTimeMillis();
         double d = dF.start(Double.parseDouble(epsilon));
         long endTime = System.currentTimeMillis();
-        LOGGER.info("Ran instance with {} machines and {} jobs in {} milliseconds.", I.getM(), I.getN(), (endTime - startTime));
+        LOGGER.info("Ran instance with {} machines and {} jobs in {} milliseconds.", I.getM(), I.getN(),
+                (endTime - startTime));
 
-// ############################################## DEBUG ##################################################################################################################
+        // ############################################## DEBUG
+        // ##################################################################################################################
         if (printResult.equals("true")) {
             System.out.println(String.format("-".repeat(70) + "%04.2f" + "-".repeat(70), d));
             System.out.println(printSchedule.printMachines(I.getMachines()));
             System.out.println(String.format("-".repeat(70) + "%04.2f" + "-".repeat(70), d));
         }
-        // DrawSchedule.drawSchedule(I); //TODO: comment this line in to create .png fiels of the result schedule.
-// ############################################## DEBUG ##################################################################################################################
+        // DrawSchedule.drawSchedule(I); //TODO: comment this line in to create .png
+        // fiels of the result schedule.
+        // ############################################## DEBUG
+        // ##################################################################################################################
 
         TestResult tr = new TestResult();
         tr.setApproximation(dF.getApproximationName());
@@ -143,39 +152,41 @@ public class App {
         tr.setJobs(I.getN());
         tr.setMachines(I.getM());
         tr.setMilliseconds((endTime - startTime));
-        tr.setBigJobs(MyMath.findBigJobs(I, d).length);
-        tr.setSmallJobs(MyMath.findSmallJobs(I, d).length);
+        tr.setBigJobs(MyMath.findBigJobs(I, d / 2).length);
+        tr.setSmallJobs(MyMath.findSmallJobs(I, d / 2).length);
         tr.setInstanceID(I.getId());
         // tr.setProcessingTimes(I.getJobs());
 
         return tr;
     }
 
-    
-    /** 
+    /**
      * @return Instance
      * @throws InterruptedException
      */
     private static Instance getInstance() {
         Instance I = new Instance();
-        if(InstancePolicy == null) {
-            I.generateRandomInstance(Integer.parseInt(minJobs), Integer.parseInt(maxJobs), Integer.parseInt(minMachines), Integer.parseInt(maxMachines), Integer.parseInt(maxSeqTime));
+        if (InstancePolicy == null) {
+            I.generateRandomInstance(Integer.parseInt(minJobs), Integer.parseInt(maxJobs),
+                    Integer.parseInt(minMachines), Integer.parseInt(maxMachines), Integer.parseInt(maxSeqTime));
 
-        } else if(InstancePolicy.equals("push")) {
-            I.generateRandomInstance(Integer.parseInt(minJobs), Integer.parseInt(maxJobs), Integer.parseInt(minMachines), Integer.parseInt(maxMachines), Integer.parseInt(maxSeqTime));
+        } else if (InstancePolicy.equals("push")) {
+            I.generateRandomInstance(Integer.parseInt(minJobs), Integer.parseInt(maxJobs),
+                    Integer.parseInt(minMachines), Integer.parseInt(maxMachines), Integer.parseInt(maxSeqTime));
             try {
                 new ObjectMapper().writeValue(Paths.get("/home/instances/instance_" + I.getId() + ".json").toFile(), I);
-                LOGGER.info("Saved file {}.", "/home/instances/instance_" + I.getId());;
+                LOGGER.info("Saved file {}.", "/home/instances/instance_" + I.getId());
+                ;
             } catch (IOException e) {
                 e.printStackTrace();
                 LOGGER.error("The Instance couldn't be saved to a File.");
             }
 
-        } else if(InstancePolicy.equals("pull")) {
+        } else if (InstancePolicy.equals("pull")) {
 
             File dir = new File("/home/instances");
             File[] files = dir.listFiles();
-            while(files.length == 0) {
+            while (files.length == 0) {
                 LOGGER.debug("Could not find an Instance to execute. Waiting 60 seconds.");
                 try {
                     TimeUnit.SECONDS.sleep(60);
@@ -198,7 +209,6 @@ public class App {
                 }
                 return getInstance();
             }
-
 
         }
         return I;

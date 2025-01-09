@@ -5,14 +5,14 @@ import org.apache.logging.log4j.Logger;
 
 import de.ohnes.AlgorithmicComponents.Algorithm;
 import de.ohnes.AlgorithmicComponents.Approximation.Approximation;
+import de.ohnes.util.ApproximationRatio;
 import de.ohnes.util.Instance;
 
 public class DualApproximationFramework {
 
     private static final Logger LOGGER = LogManager.getLogger(DualApproximationFramework.class);
 
-    
-    //an fptas that is to be used for a large number of machines (>= 8*(n/epsilon))
+    // an fptas that is to be used for a large number of machines (>= 8*(n/epsilon))
     private Algorithm fptas;
     private Algorithm knapsack;
     private Instance I;
@@ -24,12 +24,11 @@ public class DualApproximationFramework {
         this.approx = approx;
         this.I = I;
     }
-    
 
     public double start(double epsilon) {
-        
+
         Algorithm usedAlgo;
-        if(I.getM() >= 8 * (I.getN() / epsilon)) {
+        if (I.getM() >= 8 * (I.getN() / epsilon)) {
             LOGGER.info("Starting dual approximation Framework with fptas: {}", this.getFPTASName());
             usedAlgo = this.fptas;
             usedAlgo.setInstance(I);
@@ -38,8 +37,8 @@ public class DualApproximationFramework {
             usedAlgo = this.knapsack;
             usedAlgo.setInstance(I);
         }
-        double lowerBound = this.approx.approximate(I) / 2; //TODO this bound could be thighter.
-        double upperBound = lowerBound * 8;                 //TODO add list scheduling. -> schedule twiari greedy and divide by 2.
+        double lowerBound = this.approx.approximate(I) / 2; // TODO this bound could be thighter.
+        double upperBound = lowerBound * 8; // TODO add list scheduling. -> schedule twiari greedy and divide by 2.
 
         return binarySearch(usedAlgo, epsilon, lowerBound, upperBound);
     }
@@ -47,16 +46,19 @@ public class DualApproximationFramework {
     private double binarySearch(Algorithm algo, double epsilon, double l, double r) {
 
         double mid = l + (r - l) / 2;
-        I.resetInstance(); //reset the instance because it was altered in previous attempt.
-        if(algo.solve(mid, epsilon)) { //a schedule of length "mid" exists
+        I.resetInstance(); // reset the instance because it was altered in previous attempt.
+        ApproximationRatio result = algo.solve(mid, epsilon);
+        if (!result.equals(ApproximationRatio.NONE)) { // a schedule of length "mid" exists
 
-            if(r - mid < epsilon) {
+            if (r - mid < epsilon) {
+                LOGGER.info("Found schedule with makespan: {}", mid);
+                LOGGER.info("Guaranteed approximation ratio: {}", result);
                 return mid;
             }
 
-            return binarySearch(algo, epsilon, l, mid); //try to find a better schedule
-        } else {    //no schedule for length "mid" exists
-            return binarySearch(algo, epsilon, mid, r); //find a schedule for worse makespan
+            return binarySearch(algo, epsilon, l, mid); // try to find a better schedule
+        } else { // no schedule for length "mid" exists
+            return binarySearch(algo, epsilon, mid, r); // find a schedule for worse makespan
         }
     }
 
@@ -71,5 +73,5 @@ public class DualApproximationFramework {
     public String getShelvesAlgoName() {
         return this.knapsack.getClass().getSimpleName();
     }
-    
+
 }

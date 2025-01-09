@@ -11,9 +11,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Machine {
-    
+
     private int id;
-    private double usedTime;    //maybe not needed. ?
+    private double usedTime; // maybe not needed. ?
     private List<Job> jobs;
 
     public Machine(int id) {
@@ -33,19 +33,19 @@ public class Machine {
         this.usedTime -= job.getProcessingTime(job.getAllotedMachines());
     }
 
-    public double getFirstFreeTime(int time) {
-        double t = 0;
+    public int getFirstFreeTime() {
+        int t = 0;
         boolean used = true;
-        while(used) {
+        while (used) {
             used = false;
-            for(Job job : jobs) {
-                if(job.getStartingTime() == t) {
+            for (Job job : jobs) {
+                if (job.getStartingTime() == t) {
                     t = job.getStartingTime() + job.getProcessingTime(job.getAllotedMachines());
                     used = true;
                 }
             }
         }
-        return t; 
+        return t;
     }
 
 }

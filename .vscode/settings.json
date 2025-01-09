@@ -1,12 +1,27 @@
 {
-    "java.project.sourcePaths": [
-        "src",
-        "test"
-    ],
-    "java.project.outputPath": "bin",
-    "java.project.referencedLibraries": [
-        "lib/**/*.jar"
-    ],
-    "java.dependency.packagePresentation": "flat",
-    "java.configuration.updateBuildConfiguration": "automatic"
+  "java.project.sourcePaths": ["src", "test"],
+  "java.project.outputPath": "bin",
+  "java.project.referencedLibraries": ["lib/**/*.jar"],
+  "java.dependency.packagePresentation": "flat",
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "workbench.colorCustomizations": {
+    "activityBar.activeBackground": "#d2e877",
+    "activityBar.background": "#d2e877",
+    "activityBar.foreground": "#15202b",
+    "activityBar.inactiveForeground": "#15202b99",
+    "activityBarBadge.background": "#20a0bf",
+    "activityBarBadge.foreground": "#e7e7e7",
+    "commandCenter.border": "#15202b99",
+    "sash.hoverBorder": "#d2e877",
+    "statusBar.background": "#c4e14b",
+    "statusBar.foreground": "#15202b",
+    "statusBarItem.hoverBackground": "#b3d524",
+    "statusBarItem.remoteBackground": "#c4e14b",
+    "statusBarItem.remoteForeground": "#15202b",
+    "titleBar.activeBackground": "#c4e14b",
+    "titleBar.activeForeground": "#15202b",
+    "titleBar.inactiveBackground": "#c4e14b99",
+    "titleBar.inactiveForeground": "#15202b99"
+  },
+  "peacock.remoteColor": "#c4e14b"
 }

@@ -13,7 +13,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-
 @Getter
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonDeserialize(using = InstanceDeserializer.class)
@@ -27,6 +26,7 @@ public class Instance {
     @JsonProperty("machines")
     private int m;
     // @JsonDeserialize(as = Job[].class)
+    @Setter //TODO: remove setter
     @JsonProperty("jobs")
     private Job[] jobs;
 
@@ -40,8 +40,7 @@ public class Instance {
         this.jobs = jobs;
     }
 
-    
-    /** 
+    /**
      * @param minJobs
      * @param maxJobs
      * @param minMachines
@@ -52,13 +51,15 @@ public class Instance {
         this.m = MyMath.getRandomNumber(minMachines, maxMachines);
         this.n = MyMath.getRandomNumber(minJobs, maxJobs);
         this.jobs = new Job[this.n];
-        
-        for(int i = 0; i < this.n; i++) {
+
+        for (int i = 0; i < this.n; i++) {
             int[] processingTimes = new int[this.m];
             processingTimes[0] = MyMath.getRandomNumber(20, maxSeqTime);
-            for(int j = 1; j < this.m; j++) {
-                processingTimes[j] = (int) (processingTimes[0] / (j + 1)); //minimal processing time
-                // processingTimes[j] = MyMath.getRandomNumber((int) Math.ceil((j / (double) (j + 1)) * processingTimes[j - 1]), processingTimes[j - 1]); //comment in for random processing times.
+            for (int j = 1; j < this.m; j++) {
+                processingTimes[j] = (int) (processingTimes[0] / (j + 1)); // minimal processing time
+                // processingTimes[j] = MyMath.getRandomNumber((int) Math.ceil((j / (double) (j
+                // + 1)) * processingTimes[j - 1]), processingTimes[j - 1]); //comment in for
+                // random processing times.
             }
             this.jobs[i] = new Job(i, processingTimes);
         }
@@ -70,28 +71,29 @@ public class Instance {
         String result = "";
         result += "Machines: " + this.m + "\n";
         result += "Jobs:\n";
-        for(Job j : this.jobs) {
+        for (Job j : this.jobs) {
             result += j.getId();
             result += "\t";
-            for(double p : j.getProcessingTimes()) {
+            for (double p : j.getProcessingTimes()) {
                 result += p + ", ";
             }
             result += "\n";
         }
         return result;
     }
+
     @JsonIgnore
     public void addMachines(List<Machine> machines) {
         machines.addAll(Arrays.asList(this.machines));
-        this.machines = machines.toArray(Machine[] :: new);
+        this.machines = machines.toArray(Machine[]::new);
     }
 
     @JsonIgnore
     public double getMakespan() {
         double maxMakespan = 0;
-        for(Job job : this.jobs) {
+        for (Job job : this.jobs) {
             double finishTime = job.getStartingTime() + job.getProcessingTime(job.getAllotedMachines());
-            if(finishTime > maxMakespan) {
+            if (finishTime > maxMakespan) {
                 maxMakespan = finishTime;
             }
         }
@@ -100,6 +102,7 @@ public class Instance {
 
     /**
      * return a job for i in [0 .. n]
+     * 
      * @param i
      * @return
      */
@@ -109,13 +112,14 @@ public class Instance {
 
     /**
      * only for debugging
+     * 
      * @return the total makespan
      */
     public double getMakespanBigJobs(double d) {
         double maxMakespan = 0;
-        for(Job job : MyMath.findBigJobs(this, d)) {
+        for (Job job : MyMath.findBigJobs(this, d / 2)) {
             double finishTime = job.getStartingTime() + job.getProcessingTime(job.getAllotedMachines());
-            if(finishTime > maxMakespan) {
+            if (finishTime > maxMakespan) {
                 maxMakespan = finishTime;
             }
         }
@@ -126,5 +130,5 @@ public class Instance {
         Arrays.asList(jobs).stream().forEach(j -> j.reset());
         this.machines = null;
     }
-    
+
 }
